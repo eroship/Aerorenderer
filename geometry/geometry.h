@@ -28,6 +28,7 @@ template <class t> struct Vec3 {
 	};
 	Vec3() : x(0), y(0), z(0) {}
 	Vec3(t _x, t _y, t _z) : x(_x),y(_y),z(_z) {}
+	Vec3(t* array):x(array[0]),y(array[1]),z(array[2]){}
 	inline Vec3<t> operator ^(const Vec3<t> &v) const { return Vec3<t>(y*v.z-z*v.y, z*v.x-x*v.z, x*v.y-y*v.x); }
 	inline Vec3<t> operator +(const Vec3<t> &v) const { return Vec3<t>(x+v.x, y+v.y, z+v.z); }
 	inline Vec3<t> operator -(const Vec3<t> &v) const { return Vec3<t>(x-v.x, y-v.y, z-v.z); }
@@ -35,6 +36,10 @@ template <class t> struct Vec3 {
 	inline t       operator *(const Vec3<t> &v) const { return x*v.x + y*v.y + z*v.z; }
 	float norm () const { return std::sqrt(x*x+y*y+z*z); }
 	Vec3<t> & normalize(t l=1) { *this = (*this)*(l/norm()); return *this; }
+	inline Vec3<t> crossproduct(const Vec3<t> &v){
+		return Vec3<t>(y*v.x-z*v.y, -(x*v.z-z*v.x), x*v.y-y*v.x);
+	}
+
 	template <class > friend std::ostream& operator<<(std::ostream& s, Vec3<t>& v);
 };
 

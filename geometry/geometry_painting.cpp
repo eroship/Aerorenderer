@@ -3,6 +3,7 @@
 void line1(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color);
 void line2(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color);
 void line3(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color);
+static Vec3i barycentric(Vec2i *pts, Vec2i P);
 
 //第一种画线方法：指定两个顶点和步长(顶点的坐标是像素坐标)
 void line1(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color) {
@@ -102,8 +103,100 @@ void line(Vec2i p0, Vec2i p1, TGAImage &image, TGAColor color) {
     }
 }
 
-void triangle(Vec2i t0, Vec2i t1, Vec2i t2, TGAImage &image, TGAColor color){
+//画三角形边框
+void triangle_edge(Vec2i t0, Vec2i t1, Vec2i t2, TGAImage &image, TGAColor color){
     line(t0, t1, image, color);
     line(t1, t2, image, color);
     line(t2, t0, image, color);
+}
+
+//填色三角形,方法1：扫线
+void triangle1(Vec2i *pts, TGAImage &image, TGAColor color){
+    Vec2i t0 = pts[0];
+    Vec2i t1 = pts[1];
+    Vec2i t2 = pts[2];
+    //t0,t1,t2从低到高
+    if (t0.y>t1.y) std::swap(t0, t1); 
+    if (t0.y>t2.y) std::swap(t0, t2); 
+    if (t1.y>t2.y) std::swap(t1, t2);
+    
+    int total_height = t2.y - t0.y + 1;
+    
+    for(int y = t0.y; y<=t1.y; y++){
+        int segment_height = t1.y-t0.y+1; //先画三角形的下半部分
+        float alpha = (float)(y-t0.y)/total_height; 
+        float beta  = (float)(y-t0.y)/segment_height; 
+        Vec2i A = t0 + (t2-t0)*alpha; 
+        Vec2i B = t0 + (t1-t0)*beta; //A和B分别是左右两条边上同一水平线上的两点
+        if (A.x>B.x) std::swap(A, B); 
+        for (int j=A.x; j<=B.x; j++) { 
+            image.set(j, y, color); // 
+        } 
+    }
+
+    for (int y=t1.y; y<=t2.y; y++) { 
+        int segment_height =  t2.y-t1.y+1; 
+        float alpha = (float)(y-t0.y)/total_height; 
+        float beta  = (float)(y-t1.y)/segment_height; // be careful with divisions by zero 
+        Vec2i A = t0 + (t2-t0)*alpha; 
+        Vec2i B = t1 + (t2-t1)*beta; 
+        if (A.x>B.x) std::swap(A, B); 
+        for (int j=A.x; j<=B.x; j++) { 
+            image.set(j, y, color); // attention, due to int casts t0.y+i != A.y 
+        } 
+    }
+}
+
+//填色三角形，方法2：检测点是否在三角形内
+void triangle2(Vec2i *pts, TGAImage &image, TGAColor color){
+    Vec2i boundingbox_min(image.get_width()-1, image.get_height()-1);
+    Vec2i boundingbox_max(0,0);
+    for(int i=0; i<3; i++){
+        boundingbox_max.x = std::max(boundingbox_max.x, pts[i].x);
+        boundingbox_max.y = std::max(boundingbox_max.y, pts[i].y);
+
+        boundingbox_min.x = std::min(boundingbox_min.x, pts[i].x);
+        boundingbox_min.y = std::min(boundingbox_min.y, pts[i].y);
+    }
+    boundingbox_max.x = std::min(boundingbox_max.x, image.get_width()-1);
+    boundingbox_max.y = std::min(boundingbox_max.y, image.get_height()-1);
+
+    boundingbox_max.x = std::max(boundingbox_max.x, 0);
+    boundingbox_max.y = std::max(boundingbox_max.y, 0);
+
+    //将三个顶点的顺序调整为逆时针
+    Vec3i l01(pts[1].x - pts[0].x, pts[1].y - pts[0].y, 0);
+    Vec3i l02(pts[2].x - pts[0].x, pts[2].y - pts[0].y, 0);
+    Vec3i cross12 = l01.crossproduct(l02);
+    
+    if(cross12.z < 0) std::swap(pts[1],pts[2]);
+
+
+    for(int px = boundingbox_min.x; px<=boundingbox_max.x; px++){
+        for(int py = boundingbox_min.y; py<=boundingbox_max.y; py++){
+            Vec3i ifin_vec = barycentric(pts, Vec2i(px,py));
+            if(ifin_vec.x<0 || ifin_vec.y<0 || ifin_vec.z<0) continue;
+                image.set(px,py,color);
+        }
+    }
+    
+}
+
+//逆时针连接三条边，分别做叉乘
+static Vec3i barycentric(Vec2i *pts, Vec2i P){
+    Vec3i l01(pts[1].x - pts[0].x, pts[1].y - pts[0].y, 0);
+    Vec3i l02(pts[2].x - pts[0].x, pts[2].y - pts[0].y, 0);
+    Vec3i l12 = l02-l01;
+    Vec3i l20 = Vec3i() - l02;
+
+    Vec3i ls[3] = {l01,l12,l20};
+    int ifin_vec[3];
+
+    for(int i=0; i<3; i++){
+        Vec3i lp(P.x - pts[i].x, P.y - pts[i].y, 0);
+        Vec3i c = ls[i].crossproduct(lp);
+        ifin_vec[i] = c.z;
+    }
+
+    return Vec3i(ifin_vec);
 }
