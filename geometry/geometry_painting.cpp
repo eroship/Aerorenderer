@@ -200,3 +200,29 @@ static Vec3i barycentric(Vec2i *pts, Vec2i P){
 
     return Vec3i(ifin_vec);
 }
+
+
+
+//根据一个obj文件，画出其中三角面片的所有框框,此处绘制直接舍弃z轴，没有透视投影
+void line_from_obj(const char* obj_name, TGAImage& image){
+    Model *model = NULL;
+    const int width = image.get_width();
+    const int height = image.get_height();
+    model = new Model(obj_name);
+
+    for(int i=0; i<model->nfaces(); i++){
+        std::vector<int> face = model->face(i);
+        for(int j=0; j<3; j++){
+            Vec3f v0 = model->vert(face[j]);
+            Vec3f v1 = model->vert(face[(j+1)%3]);
+            
+            int x0 = (v0.x+1.)*width/2.;
+            int y0 = (v0.y+1.)*height/2.;
+            int x1 = (v1.x+1.)*width/2.;
+            int y1 = (v1.y+1.)*height/2.;
+
+            line(Vec2i(x0,y0), Vec2i(x1,y1), image, white);
+        }
+    }
+
+}
