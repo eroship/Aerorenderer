@@ -4,6 +4,7 @@
 #include <iostream>
 #include "geometry.h"
 
+template <> Vec3<float>::Vec3(Matrix m) : x(m[0][0]/m[3][0]), y(m[1][0]/m[3][0]), z(m[2][0]/m[3][0]) {}
 template <> template <> Vec3<int>::Vec3<>(const Vec3<float> &v) : x(int(v.x+.5)), y(int(v.y+.5)), z(int(v.z+.5)) {}
 template <> template <> Vec3<float>::Vec3<>(const Vec3<int> &v) : x(v.x), y(v.y), z(v.z) {}
 
@@ -97,4 +98,57 @@ std::ostream& operator<<(std::ostream& s, Matrix& m) {
         s << "\n";
     }
     return s;
+}
+
+//对于一个透视中心在远点，方向为z负方向的视锥,将视锥变为平行棱柱
+//然后将平行棱柱上所有的点映射到[-1,1]^3
+//这里的height和width是视锥近平面的长宽（假设是标准场景，近平面关于原点对称）
+// [2n/w, 0,   0,   0,
+//  0,   2n/h, 0,   0,
+//  0,   0,   -(f+n)/(f-n),  -2nf/(f-n),
+//  0,   0,   -1,   0]
+Matrix perspective(const float near, const float far, const float width, const float height){
+    Matrix m1 = Matrix::identity(4);
+    //透视变换，变成长方体并变换到[-1,1]^3
+    m1[0][0] = 2*near/width;
+    m1[1][1] = 2*near/height;
+    m1[2][2] = -(far+near)/(far-near);
+    m1[2][3] = -2*near*far/(far-near);
+    m1[3][2] = -1;   
+
+    return m1;
+}
+
+
+//一个4*4矩阵：
+// [w/2, 0,   0,   x+w/2,
+//  0,   h/2, 0,   y+h/2,
+//  0,   0,   d/2, d/2,
+//  0,   0,   0,   1]
+//将一个[-1,1]^3空间内的点映射到[x,x+w]*[y,y+h]*[0,d]
+Matrix viewport(const int x, const int y, const int w, const int h, const int depth){
+    Matrix m = Matrix::identity(4);
+    m[0][3] = x+w/2.f;
+    m[1][3] = y+h/2.f;
+    m[2][3] = depth/2.f;
+
+    m[0][0] = w/2.f;
+    m[1][1] = h/2.f;
+    m[2][2] = depth/2.f;
+    return m;
+}
+
+//lookat变换矩阵:
+Matrix lookat(Vec3f eye, Vec3f center, Vec3f up){
+    Vec3f z = (eye-center).normalize();
+    Vec3f x = (up.crossproduct(z)).normalize();
+    Vec3f y = (z.crossproduct(x)).normalize();
+    Matrix res = Matrix::identity(4);
+    for (int i=0; i<3; i++) {
+        res[0][i] = x[i];
+        res[1][i] = y[i];
+        res[2][i] = z[i];
+        res[i][3] = -center[i];
+    }
+    return res;
 }
