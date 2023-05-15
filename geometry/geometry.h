@@ -32,6 +32,7 @@ template <class t> struct Vec3 {
 
 	Vec3<t>() : x(t(0)), y(t(0)), z(t(0)) {}
 	Vec3<t>(t _x, t _y, t _z) : x(_x),y(_y),z(_z) {}
+	template <class u> Vec3<t>(const Vec3<u> &v);
 	Vec3<t>(t* array):x(array[0]),y(array[1]),z(array[2]){}
 	Vec3<t>(const Vec3<t> &v): x(t()),y(t()),z(t()){ *this=v; }
 	Vec3<t> & operator =(const Vec3<t> &v){
@@ -40,6 +41,7 @@ template <class t> struct Vec3 {
 			y = v.y;
 			z = v.z;
 		}
+		return *this;
 	}
 	
 	inline Vec3<t> operator +(const Vec3<t> &v) const { return Vec3<t>(x+v.x, y+v.y, z+v.z); }
@@ -51,6 +53,11 @@ template <class t> struct Vec3 {
 	inline Vec3<t> crossproduct(const Vec3<t> &v){
 		return Vec3<t>(y*v.x-z*v.y, -(x*v.z-z*v.x), x*v.y-y*v.x);
 	}
+	t& operator [](const int i){
+		if(i<=0) return x;
+		else if(i==1) return y;
+		else return z;
+	}
 
 	template <class > friend std::ostream& operator<<(std::ostream& s, Vec3<t>& v);
 };
@@ -59,6 +66,10 @@ typedef Vec2<float> Vec2f;
 typedef Vec2<int>   Vec2i;
 typedef Vec3<float> Vec3f;
 typedef Vec3<int>   Vec3i;
+
+//这两句完全不知道为什么，它声明了两个函数，但是却写了两个template
+template <> template <> Vec3<int>::Vec3(const Vec3<float> &v);
+template <> template <> Vec3<float>::Vec3(const Vec3<int> &v);
 
 template <class t> std::ostream& operator<<(std::ostream& s, Vec2<t>& v) {
 	s << "(" << v.x << ", " << v.y << ")\n";
@@ -69,5 +80,25 @@ template <class t> std::ostream& operator<<(std::ostream& s, Vec3<t>& v) {
 	s << "(" << v.x << ", " << v.y << ", " << v.z << ")\n";
 	return s;
 }
+
+/////////////////////2023-5-15///////////////////////
+//perspective transformation：实现一个矩阵运算库
+const int DEFAULT_ALLOC = 4;
+class Matrix{
+	std::vector<std::vector<float>> m;
+	int rows, cols;
+public:
+	Matrix(int r=DEFAULT_ALLOC, int c=DEFAULT_ALLOC);
+	inline int nrows(){return rows;}
+	inline int ncols(){return cols;}
+
+	static Matrix identity(int dimension); //生成单位矩阵
+	std::vector<float>& operator [](const int i);
+	Matrix operator *(const Matrix& a);
+	Matrix transpose();
+	Matrix inverse();
+
+	friend std::ostream& operator<<(std::ostream& s, Matrix& m);
+};
 
 #endif
