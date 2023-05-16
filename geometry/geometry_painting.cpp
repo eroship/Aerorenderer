@@ -204,7 +204,7 @@ static Vec3i barycentric(Vec2i *pts, Vec2i P){
 
 
 //根据一个obj文件，画出其中三角面片的所有框框,此处绘制直接舍弃z轴，没有透视投影
-void line_from_obj(const char* obj_name, TGAImage& image){
+void frame_orthogonal(const char* obj_name, TGAImage& image){
     Model *model = NULL;
     const int width = image.get_width();
     const int height = image.get_height();
@@ -223,6 +223,27 @@ void line_from_obj(const char* obj_name, TGAImage& image){
 
             line(Vec2i(x0,y0), Vec2i(x1,y1), image, white);
         }
+    }
+
+}
+
+void triangle(Vec3i t0, Vec3i t1, Vec3i t2, float ity0, float ity1, float ity2, TGAImage &image, int *zbuffer){
+    
+}
+
+//根据一个obj文件，画出其中三角面片的所有框框,包含透视投影和视角移动
+void frame_perspective(
+    const char* obj_name, TGAImage& image, Vec3f origin, Vec3f target, Vec3f up, 
+    float fov, float aspect, float near, float far){
+
+    Model *model = NULL;
+    const int width = image.get_width();
+    const int height = image.get_height();
+    model = new Model(obj_name);
+
+    int *zbuffer = new int[width*height];
+    for(int i=0; i<width*height; i++){
+        zbuffer[i] = std::numeric_limits<int>::min();
     }
 
 }

@@ -4,7 +4,7 @@
 #include <iostream>
 #include "geometry.h"
 
-template <> Vec3<float>::Vec3(Matrix m) : x(m[0][0]/m[3][0]), y(m[1][0]/m[3][0]), z(m[2][0]/m[3][0]) {}
+//template <> Vec3<float>::Vec3(Matrix m) : x(m[0][0]/m[3][0]), y(m[1][0]/m[3][0]), z(m[2][0]/m[3][0]) {}
 template <> template <> Vec3<int>::Vec3<>(const Vec3<float> &v) : x(int(v.x+.5)), y(int(v.y+.5)), z(int(v.z+.5)) {}
 template <> template <> Vec3<float>::Vec3<>(const Vec3<int> &v) : x(v.x), y(v.y), z(v.z) {}
 
@@ -138,17 +138,43 @@ Matrix viewport(const int x, const int y, const int w, const int h, const int de
     return m;
 }
 
-//lookat变换矩阵:
-Matrix lookat(Vec3f eye, Vec3f center, Vec3f up){
-    Vec3f z = (eye-center).normalize();
-    Vec3f x = (up.crossproduct(z)).normalize();
-    Vec3f y = (z.crossproduct(x)).normalize();
-    Matrix res = Matrix::identity(4);
-    for (int i=0; i<3; i++) {
-        res[0][i] = x[i];
-        res[1][i] = y[i];
-        res[2][i] = z[i];
-        res[i][3] = -center[i];
-    }
-    return res;
+//lookat变换矩阵
+//此矩阵实际上是对物体点的变换，将点的坐标从标准坐标系，变换到以相机为中心的坐标系
+//相机的位置origin,看向target，则视轴为target-origin，相机上方为up
+//对原坐标系变换：首先平移到origin
+//然后旋转，x轴旋转到up*（target-origin）（相机右侧）
+//y轴旋转到up，-z旋转到target-origin
+Matrix lookat(Vec3f origin, Vec3f target, Vec3f up){
+    Matrix transport = Matrix::identity(4);
+    transport[0][3] = -origin.x;
+    transport[1][3] = -origin.y;
+    transport[2][3] = -origin.z;
+
+    Matrix rotate = Matrix::identity(4);
+    
+    Vec3f forward = target - origin;
+    Vec3f right = forward.crossproduct(up);
+    
+    rotate[0][0] = right.x;
+    rotate[1][0] = right.y;
+    rotate[2][0] = right.z;
+    rotate[0][1] = up.x;
+    rotate[1][1] = up.y;
+    rotate[2][1] = up.z;
+    rotate[0][2] = -forward.x;
+    rotate[1][2] = -forward.y;
+    rotate[2][2] = -forward.z;
+
+    rotate = rotate.transpose();
+
+    return rotate*transport;
+}
+
+
+Matrix transport(Vec3f v){
+    Matrix transport = Matrix::identity(4);
+    transport[0][3] = v.x;
+    transport[1][3] = v.y;
+    transport[2][3] = v.z;
+    return transport;
 }

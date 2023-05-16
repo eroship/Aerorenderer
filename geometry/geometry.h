@@ -32,7 +32,7 @@ template <class t> struct Vec3 {
 
 	Vec3<t>() : x(t()), y(t()), z(t()) {}
 	Vec3<t>(t _x, t _y, t _z) : x(_x),y(_y),z(_z) {}
-	Vec3<t>(Matrix m);
+	//Vec3<t>(Matrix m);
 
 	template <class u> Vec3<t>(const Vec3<u> &v);
 	Vec3<t>(t* array):x(array[0]),y(array[1]),z(array[2]){}
@@ -102,5 +102,13 @@ public:
 
 	friend std::ostream& operator<<(std::ostream& s, Matrix& m);
 };
+
+//一些基本变换矩阵
+Matrix perspective(const float near, const float far, const float width, const float height);
+Matrix viewport(const int x, const int y, const int w, const int h, const int depth);
+Matrix lookat(Vec3f origin, Vec3f target, Vec3f up);
+Matrix transport(Vec3f v);
+
+
 
 #endif

@@ -4,6 +4,7 @@
 #include<iostream>
 #include "tgaimage.h"
 #include <vector>
+#include <limits>
 #include <cmath>
 #include "geometry.h"
 #include "model.h"
@@ -17,5 +18,5 @@ void triangle_edge(Vec2i t0, Vec2i t1, Vec2i t2, TGAImage &image, TGAColor color
 void triangle1(Vec2i *pts, TGAImage &image, TGAColor color);
 void triangle2(Vec2i *pts, TGAImage &image, TGAColor color);
 
-void line_from_obj(const char* obj_name, TGAImage& image);
+void frame_orthogonal(const char* obj_name, TGAImage& image);
 #endif

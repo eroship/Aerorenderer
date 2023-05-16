@@ -12,7 +12,7 @@ int main()
     // triangle2(t1, image, white);
     // triangle2(t2, image, green);
     TGAImage image(800,800, TGAImage::RGB);
-    line_from_obj("../obj/african_head/african_head.obj", image);
+    frame_orthogonal("../obj/african_head/african_head.obj", image);
 
     image.flip_vertically(); 
     image.write_tga_file("output.tga");
