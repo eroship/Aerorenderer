@@ -233,8 +233,10 @@ void triangle(Vec3i t0, Vec3i t1, Vec3i t2, float ity0, float ity1, float ity2, 
 
 //根据一个obj文件，画出其中三角面片的所有框框,包含透视投影和视角移动
 void frame_perspective(
-    const char* obj_name, TGAImage& image, Vec3f origin, Vec3f target, Vec3f up, 
-    float fov, float aspect, float near, float far){
+    const char* obj_name, TGAImage& image, 
+    Vec3f origin, Vec3f target, Vec3f up, 
+    float fov, float aspect, float near, float far
+){
 
     Model *model = NULL;
     const int width = image.get_width();
@@ -243,7 +245,32 @@ void frame_perspective(
 
     int *zbuffer = new int[width*height];
     for(int i=0; i<width*height; i++){
+        //这个的意思是zbuffer的值先设置为int类型的最小值
         zbuffer[i] = std::numeric_limits<int>::min();
     }
+
+    //绘制模型
+    const int depth = 255;
+    Matrix ModelView = lookat(origin, target, up);
+    Matrix Projection = perspective(near, far, width, height);
+    Matrix ViewPort = viewport(width/8, height/8, width*3/4, height*3/4, depth);
+
+    std::cerr << ModelView << std::endl;
+    std::cerr << Projection << std::endl;
+    std::cerr << ViewPort << std::endl;
+    Matrix z = (ViewPort*Projection*ModelView);
+    std::cerr << z << std::endl;
+
+    for(int i=0; i<model->nfaces(); i++){
+        std::vector<int> face = model->face(i);
+        Vec3i screen_coords[3];
+        Vec3f world_coords[3];
+        float intensity[3];
+        for(int j=0; j<3; j++){
+            Vec3f v = model->vert(face[j]);
+            Matrix coord = Matrix(v)
+        }
+    }
+
 
 }
