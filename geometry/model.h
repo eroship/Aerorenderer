@@ -6,8 +6,9 @@
 
 class Model {
 private:
-    std::vector<Vec3f> verts_;
-    std::vector<std::vector<Vec3i> > faces_; // attention, this Vec3i means vertex/uv/normal
+    std::vector<Vec3f> verts_; //n*3,所有顶点
+    std::vector<std::vector<Vec3i> > faces_; 
+    //每个face包含其3个顶点的编号、纹理、顶点法向量
     std::vector<Vec3f> norms_;
     std::vector<Vec2f> uv_;
     TGAImage diffusemap_;

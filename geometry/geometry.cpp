@@ -8,9 +8,33 @@
 template <> template <> Vec3<int>::Vec3<>(const Vec3<float> &v) : x(int(v.x+.5)), y(int(v.y+.5)), z(int(v.z+.5)) {}
 template <> template <> Vec3<float>::Vec3<>(const Vec3<int> &v) : x(v.x), y(v.y), z(v.z) {}
 
+
+Vec2f vec_int2fl(Vec2i v){
+    return Vec2f(float(v.x), float(v.y));
+}
+
+Vec3f vec_int2fl(Vec3i v){
+    return Vec3f(float(v.x), float(v.y), float(v.z));
+}
+
+Vec2i vec_fl2int(Vec2f v){
+    return Vec2i(int(v.x), int(v.y));
+}
+
+Vec3i vec_fl2int(Vec3f v){
+    return Vec3i(int(v.x), int(v.y), int(v.z));
+}
+
 Matrix::Matrix(int r, int c):rows(r), cols(c) {
 //vector<f>(a,b)：vector中包含a个b
     m = std::vector<std::vector<float> >(r, std::vector<float>(c, 0.f));
+}
+
+Matrix::Matrix(Vec3f v):rows(3),cols(1){
+    m = std::vector<std::vector<float> >(3, std::vector<float>(1, 0.f));
+    m[0][0] = v[0];
+    m[1][0] = v[1];
+    m[2][0] = v[2];
 }
 
 Matrix Matrix::identity(int dims){
@@ -177,4 +201,9 @@ Matrix transport(Vec3f v){
     transport[1][3] = v.y;
     transport[2][3] = v.z;
     return transport;
+}
+
+Vec3f fromMatrix(Matrix m){
+    float vf[3] = {m[0][0],m[1][0],m[2][0]};
+    return Vec3f(vf);
 }

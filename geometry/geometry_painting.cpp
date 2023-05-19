@@ -4,6 +4,7 @@ void line1(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color);
 void line2(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color);
 void line3(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color);
 static Vec3i barycentric(Vec2i *pts, Vec2i P);
+static Vec3i barycentric(Vec3i *pts, Vec2i P);
 
 //第一种画线方法：指定两个顶点和步长(顶点的坐标是像素坐标)
 void line1(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color) {
@@ -111,7 +112,7 @@ void triangle_edge(Vec2i t0, Vec2i t1, Vec2i t2, TGAImage &image, TGAColor color
 }
 
 //填色三角形,方法1：扫线
-void triangle1(Vec2i *pts, TGAImage &image, TGAColor color){
+void triangle2D1(Vec2i *pts, TGAImage &image, TGAColor color){
     Vec2i t0 = pts[0];
     Vec2i t1 = pts[1];
     Vec2i t2 = pts[2];
@@ -148,7 +149,7 @@ void triangle1(Vec2i *pts, TGAImage &image, TGAColor color){
 }
 
 //填色三角形，方法2：检测点是否在三角形内
-void triangle2(Vec2i *pts, TGAImage &image, TGAColor color){
+void triangle2D2(Vec2i *pts, TGAImage &image, TGAColor color){
     Vec2i boundingbox_min(image.get_width()-1, image.get_height()-1);
     Vec2i boundingbox_max(0,0);
     for(int i=0; i<3; i++){
@@ -174,7 +175,7 @@ void triangle2(Vec2i *pts, TGAImage &image, TGAColor color){
 
     for(int px = boundingbox_min.x; px<=boundingbox_max.x; px++){
         for(int py = boundingbox_min.y; py<=boundingbox_max.y; py++){
-            Vec3i ifin_vec = barycentric(pts, Vec2i(px,py));
+            Vec3i ifin_vec = ifin_triangle(pts, Vec2i(px,py));
             if(ifin_vec.x<0 || ifin_vec.y<0 || ifin_vec.z<0) continue;
                 image.set(px,py,color);
         }
@@ -182,23 +183,92 @@ void triangle2(Vec2i *pts, TGAImage &image, TGAColor color){
     
 }
 
-//逆时针连接三条边，分别做叉乘
-static Vec3i barycentric(Vec2i *pts, Vec2i P){
-    Vec3i l01(pts[1].x - pts[0].x, pts[1].y - pts[0].y, 0);
-    Vec3i l02(pts[2].x - pts[0].x, pts[2].y - pts[0].y, 0);
-    Vec3i l12 = l02-l01;
-    Vec3i l20 = Vec3i() - l02;
+//判断一个点是否在三角形内：逆时针连接三条边，分别做叉乘
+template <typename T>
+static Vec3<T> ifin_triangle(Vec2<T> *pts, Vec2<T> P){
+    Vec3<T> l01(pts[1].x - pts[0].x, pts[1].y - pts[0].y, 0);
+    Vec3<T> l02(pts[2].x - pts[0].x, pts[2].y - pts[0].y, 0);
+    Vec3<T> l12 = l02-l01;
+    Vec3<T> l20 = Vec3<T>() - l02;
 
-    Vec3i ls[3] = {l01,l12,l20};
+    Vec3<T> ls[3] = {l01,l12,l20};
     int ifin_vec[3];
 
     for(int i=0; i<3; i++){
-        Vec3i lp(P.x - pts[i].x, P.y - pts[i].y, 0);
-        Vec3i c = ls[i].crossproduct(lp);
+        Vec3<T> lp(P.x - pts[i].x, P.y - pts[i].y, 0);
+        Vec3<T> c = ls[i].crossproduct(lp);
         ifin_vec[i] = c.z;
     }
 
     return Vec3i(ifin_vec);
+}
+
+template <typename T>
+static Vec3<T> ifin_triangle(Vec3<T> *pts, Vec2<T> P){
+    Vec3<T> l01(pts[1].x - pts[0].x, pts[1].y - pts[0].y, 0);
+    Vec3<T> l02(pts[2].x - pts[0].x, pts[2].y - pts[0].y, 0);
+    Vec3<T> l12 = l02-l01;
+    Vec3<T> l20 = Vec3<T>() - l02;
+
+    Vec3<T> ls[3] = {l01,l12,l20};
+    int ifin_vec[3];
+
+    for(int i=0; i<3; i++){
+        Vec3<T> lp(P.x - pts[i].x, P.y - pts[i].y, 0);
+        Vec3<T> c = ls[i].crossproduct(lp);
+        ifin_vec[i] = c.z;
+    }
+
+    return Vec3<T>(ifin_vec);
+}
+
+//三角形重心坐标插值法
+template <typename T>
+static Vec3<T> barycentric(Vec2<T> *pts, Vec2<T> P){
+    w1 = (pts[1].y - pts[2].y)*(P.x - pts[2].x) + (pts[2].x - pts[1].x)*(P.y - pts[2].y);
+    w2 = (pts[2].y - pts[0].y)*(P.x - pts[2].x) + (pts[0].x - pts[2].x)*(P.y - pts[2].y);
+    s = (pts[1].y - pts[2].y)*(pts[0].x - pts[2].x) + (pts[2].x - pts[1].x)*(pts[0].y - pts[2].y);
+    return Vec3<T>(w1/s, w2/s, T(1-w1-w2));
+}
+
+template <typename T>
+static Vec3<T> barycentric(Vec3<T> *pts, Vec3<T> P){
+    w1 = (pts[1].y - pts[2].y)*(P.x - pts[2].x) + (pts[2].x - pts[1].x)*(P.y - pts[2].y);
+    w2 = (pts[2].y - pts[0].y)*(P.x - pts[2].x) + (pts[0].x - pts[2].x)*(P.y - pts[2].y);
+    s = (pts[1].y - pts[2].y)*(pts[0].x - pts[2].x) + (pts[2].x - pts[1].x)*(pts[0].y - pts[2].y);
+    return Vec3<T>(w1/s, w2/s, T(1-w1-w2));
+}
+
+
+//给定三角形的屏幕标准三维坐标（屏幕坐标+深度），绘制图像
+void triangle3D(Vec3f *pts_f, Vec3f itys, TGAImage &image, TGAColor color, int *zbuffer){
+    Vec3i pts_i[3];
+    for(int i=0; i<3; i++) pts_i[i] = vec_fl2int(pts_f[i]);
+
+    Vec2i boundingbox_min(image.get_width()-1, image.get_height()-1);
+    Vec2i boundingbox_max(0,0);
+    for(int i=0; i<3; i++){
+        boundingbox_max.x = std::max(boundingbox_max.x, pts_i[i].x);
+        boundingbox_max.y = std::max(boundingbox_max.y, pts_i[i].y);
+
+        boundingbox_min.x = std::min(boundingbox_min.x, pts_i[i].x);
+        boundingbox_min.y = std::min(boundingbox_min.y, pts_i[i].y);
+    }
+    boundingbox_max.x = std::min(boundingbox_max.x, image.get_width()-1);
+    boundingbox_max.y = std::min(boundingbox_max.y, image.get_height()-1);
+
+    boundingbox_max.x = std::max(boundingbox_max.x, 0);
+    boundingbox_max.y = std::max(boundingbox_max.y, 0);
+
+    for(int px = boundingbox_min.x; px<=boundingbox_max.x; px++){
+        for(int py = boundingbox_min.y; py<=boundingbox_max.y; py++){
+            Vec3f weight = barycentric(pts_f, Vec3f(px,py,0));
+            if(weight.x<0 || weight.y<0 || weight.z<0) continue;
+                //对intensity进行计算:重心坐标法
+                float ity = weight*itys;
+                image.set(px,py,color*ity);
+        }
+    }
 }
 
 
@@ -227,14 +297,13 @@ void frame_orthogonal(const char* obj_name, TGAImage& image){
 
 }
 
-void triangle(Vec3i t0, Vec3i t1, Vec3i t2, float ity0, float ity1, float ity2, TGAImage &image, int *zbuffer){
-    
-}
 
 //根据一个obj文件，画出其中三角面片的所有框框,包含透视投影和视角移动
+//同时还支持改变光源方向，假设光从某方向平行入射，
+//面片的亮度由法线和光线方向夹角决定
 void frame_perspective(
     const char* obj_name, TGAImage& image, 
-    Vec3f origin, Vec3f target, Vec3f up, 
+    Vec3f origin, Vec3f target, Vec3f up, Vec3f light_dir,
     float fov, float aspect, float near, float far
 ){
 
@@ -263,12 +332,15 @@ void frame_perspective(
 
     for(int i=0; i<model->nfaces(); i++){
         std::vector<int> face = model->face(i);
-        Vec3i screen_coords[3];
+        Vec3f screen_coords[3];
         Vec3f world_coords[3];
         float intensity[3];
         for(int j=0; j<3; j++){
             Vec3f v = model->vert(face[j]);
-            Matrix coord = Matrix(v)
+            screen_coords[j] = fromMatrix(z*Matrix(v));
+            world_coords[j] = v;
+            //第i个面第j个顶点的顶点法向量*光线方向
+            intensity[j] = model->norm(i,j)*light_dir;
         }
     }
 

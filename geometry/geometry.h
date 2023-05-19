@@ -91,6 +91,7 @@ class Matrix{
 	int rows, cols;
 public:
 	Matrix(int r=DEFAULT_ALLOC, int c=DEFAULT_ALLOC);
+	Matrix(Vec3f v);
 	inline int nrows(){return rows;}
 	inline int ncols(){return cols;}
 
@@ -103,11 +104,18 @@ public:
 	friend std::ostream& operator<<(std::ostream& s, Matrix& m);
 };
 
+//vec数据类型的变换
+Vec2f vec_int2fl(Vec2i v);
+Vec3f vec_int2fl(Vec3i v);
+Vec2i vec_fl2int(Vec2f v);
+Vec3i vec_fl2int(Vec3f v);
+
 //一些基本变换矩阵
 Matrix perspective(const float near, const float far, const float width, const float height);
 Matrix viewport(const int x, const int y, const int w, const int h, const int depth);
 Matrix lookat(Vec3f origin, Vec3f target, Vec3f up);
 Matrix transport(Vec3f v);
+Vec3f fromMatrix(Matrix m);
 
 
 
